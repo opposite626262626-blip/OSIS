@@ -119,17 +119,21 @@ static void draw_checkbox(uint32_t x, uint32_t y, const char *label,
     gfx_draw_string(x + 22, y + 1, label, COLOR_WHITE, 1);
 }
 
-/* Draw OSIS logo */
+/* Draw OSIS logo - matching reference: vertical line through both top and bottom */
 static void draw_osis_logo(uint32_t cx, uint32_t cy, uint32_t size) {
     int32_t r_outer = size;
     int32_t r_inner = size * 2 / 5;
+    int32_t line_extend = size / 4;
 
-    /* Outer circle */
+    /* Vertical line through entire logo (top to bottom, extends past circles) */
+    gfx_draw_line(cx, cy - r_outer - line_extend, cx, cy + r_outer + line_extend,
+                  COLOR_WHITE, 3);
+    /* Outer circle (double ring effect) */
     gfx_draw_circle(cx, cy, r_outer, COLOR_WHITE, 3);
-    /* Inner circle */
+    gfx_draw_circle(cx, cy, r_outer - 4, COLOR_WHITE, 2);
+    /* Inner circle (double ring effect) */
     gfx_draw_circle(cx, cy, r_inner, COLOR_WHITE, 2);
-    /* Vertical line from center down past outer circle */
-    gfx_draw_line(cx, cy, cx, cy + r_outer + size / 4, COLOR_WHITE, 2);
+    gfx_draw_circle(cx, cy, r_inner - 3, COLOR_WHITE, 1);
 }
 
 /* ==================== BOOT LOGO SCREEN ==================== */
@@ -738,22 +742,79 @@ static void screen_login_password(void) {
 /* ==================== DESKTOP ==================== */
 
 static void draw_desktop_background(void) {
-    /* Sky gradient - top 70% */
-    uint32_t sky_h = gfx_height() * 70 / 100;
-    gfx_fill_gradient_v(0, 0, gfx_width(), sky_h, 0x004A90D9, 0x0087CEEB);
+    uint32_t w = gfx_width();
+    uint32_t h = gfx_height() - 40; /* minus taskbar */
 
-    /* Ground - bottom 30% minus taskbar */
-    uint32_t ground_h = gfx_height() - sky_h - 40;
-    gfx_fill_gradient_v(0, sky_h, gfx_width(), ground_h, COLOR_GROUND, 0x003D5C30);
+    /* Sunset sky - purple/orange gradient inspired by uploaded background */
+    uint32_t sky_top = h * 15 / 100;
+    uint32_t sky_mid = h * 40 / 100;
+    uint32_t horizon = h * 55 / 100;
+    uint32_t water_end = h * 70 / 100;
 
-    /* Simple clouds */
-    gfx_fill_circle(200, 100, 30, 0x00DDDDEE);
-    gfx_fill_circle(230, 95, 35, 0x00DDDDEE);
-    gfx_fill_circle(260, 100, 28, 0x00DDDDEE);
+    /* Dark purple clouds at top */
+    gfx_fill_gradient_v(0, 0, w, sky_top, 0x004B2060, 0x006B3070);
 
-    gfx_fill_circle(600, 130, 25, 0x00DDDDEE);
-    gfx_fill_circle(625, 125, 30, 0x00DDDDEE);
-    gfx_fill_circle(650, 130, 22, 0x00DDDDEE);
+    /* Purple to orange sky */
+    gfx_fill_gradient_v(0, sky_top, w, sky_mid - sky_top, 0x006B3070, 0x00D06030);
+
+    /* Orange to golden horizon */
+    gfx_fill_gradient_v(0, sky_mid, w, horizon - sky_mid, 0x00D06030, 0x00E8A020);
+
+    /* Sun glow at horizon center */
+    uint32_t sun_cx = w * 40 / 100;
+    uint32_t sun_cy = horizon - 10;
+    gfx_fill_circle(sun_cx, sun_cy, 40, 0x00F0C040);
+    gfx_fill_circle(sun_cx, sun_cy - 5, 32, 0x00F8D860);
+
+    /* Water/lake reflection - golden */
+    gfx_fill_gradient_v(0, horizon, w, water_end - horizon, 0x00C08030, 0x00406030);
+
+    /* Water shimmer lines */
+    for (uint32_t y = horizon + 5; y < water_end; y += 8) {
+        uint32_t lx = sun_cx - 60 + (y % 20);
+        gfx_draw_line(lx, y, lx + 40, y, 0x00E0B050, 1);
+    }
+
+    /* Green ground with grass */
+    gfx_fill_gradient_v(0, water_end, w, h - water_end, 0x00306820, 0x00204010);
+
+    /* Flowers - small colored dots scattered on ground */
+    uint32_t flower_colors[] = {0x00A040C0, 0x00E0E040, 0x00E06060, 0x00C060D0};
+    for (uint32_t i = 0; i < 40; i++) {
+        uint32_t fx = (i * 97 + 13) % w;
+        uint32_t fy = water_end + 10 + ((i * 53 + 7) % (h - water_end - 15));
+        gfx_fill_circle(fx, fy, 2, flower_colors[i % 4]);
+    }
+
+    /* Clouds - purple/dark streaks */
+    gfx_fill_circle(w * 20 / 100, sky_top + 20, 35, 0x00553070);
+    gfx_fill_circle(w * 25 / 100, sky_top + 15, 40, 0x00603878);
+    gfx_fill_circle(w * 30 / 100, sky_top + 22, 30, 0x00553070);
+
+    gfx_fill_circle(w * 60 / 100, sky_top + 30, 30, 0x00704080);
+    gfx_fill_circle(w * 65 / 100, sky_top + 25, 35, 0x00603878);
+    gfx_fill_circle(w * 70 / 100, sky_top + 32, 28, 0x00704080);
+
+    /* Tree silhouette on right side */
+    uint32_t tx = w * 70 / 100;
+    uint32_t ty = water_end - 5;
+    gfx_fill_rect(tx - 3, ty - 80, 6, 85, 0x00301820);
+    gfx_fill_circle(tx, ty - 90, 25, 0x00402050);
+    gfx_fill_circle(tx - 15, ty - 80, 18, 0x00402050);
+    gfx_fill_circle(tx + 18, ty - 85, 20, 0x00402050);
+    gfx_fill_circle(tx + 5, ty - 100, 15, 0x00402050);
+
+    /* Small house silhouette on far right */
+    uint32_t hx = w * 85 / 100;
+    uint32_t hy = water_end;
+    gfx_fill_rect(hx, hy - 25, 30, 25, 0x00403020);
+    /* Roof */
+    for (int i = 0; i < 15; i++) {
+        gfx_draw_line(hx - i, hy - 25 - i, hx + 30 + i, hy - 25 - i, 0x00503828, 1);
+    }
+    /* Chimney smoke */
+    gfx_fill_circle(hx + 25, hy - 45, 4, 0x00888888);
+    gfx_fill_circle(hx + 27, hy - 52, 3, 0x00999999);
 }
 
 static void draw_taskbar(void) {
@@ -762,10 +823,10 @@ static void draw_taskbar(void) {
 
     /* Start button */
     gfx_fill_rounded_rect(4, tb_y + 4, 70, 32, 4, COLOR_START_BTN);
-    /* OSIS mini logo in start button */
+    /* OSIS mini logo in start button (line through both top and bottom) */
+    gfx_draw_line(24, tb_y + 8, 24, tb_y + 32, COLOR_WHITE, 1);
     gfx_draw_circle(24, tb_y + 20, 10, COLOR_WHITE, 1);
     gfx_draw_circle(24, tb_y + 20, 4, COLOR_WHITE, 1);
-    gfx_draw_line(24, tb_y + 20, 24, tb_y + 32, COLOR_WHITE, 1);
     gfx_draw_string(38, tb_y + 12, "OSIS", COLOR_WHITE, 1);
 
     /* Clock area on the right */

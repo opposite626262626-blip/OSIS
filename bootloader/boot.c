@@ -139,18 +139,16 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
         /* Clear to black */
         fill_rect(0, 0, w, h, 0x00000000);
 
-        /* Outer circle (white) */
+        /* Vertical line through entire logo (top to bottom) */
+        draw_line_v(cx, cy - r_outer - 15, cy + r_outer + 15, 0x00FFFFFF, 3);
+
+        /* Outer circle (double ring) */
         draw_circle(cx, cy, r_outer, 0x00FFFFFF, 3);
+        draw_circle(cx, cy, r_outer - 4, 0x00FFFFFF, 2);
 
-        /* Inner circle (white) */
+        /* Inner circle (double ring) */
         draw_circle(cx, cy, r_inner, 0x00FFFFFF, 2);
-
-        /* Vertical line from center going down past outer circle */
-        draw_line_v(cx, cy, cy + r_outer + 15, 0x00FFFFFF, 2);
-
-        /* "Setup file for you" text below logo - use console positioning */
-        /* We'll use GOP framebuffer text rendering for this */
-        /* For now use console */
+        draw_circle(cx, cy, r_inner - 3, 0x00FFFFFF, 1);
     }
 
     /* Print boot message using UEFI console */
